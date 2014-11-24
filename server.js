@@ -21,11 +21,11 @@ app.get('/', function (req, res) {
 console.log("server listen in port " + SERVER_PORT);
 
 io.sockets.on('connection', function (socket) {
-	console.log("A new user is connecting with the server in port " + SERVER_PORT);
+	//console.log("A new user is connecting with the server in port " + SERVER_PORT);
 	socket.on('adduser', function(userInfo){
 		userInfo = JSON.parse(userInfo);
 		socket.userInfo = userInfo;
-		console.log(userInfo.roomId);
+		//console.log(userInfo.roomId);
 		socket.username = userInfo.firstName + userInfo.lastName;
 		socket.room = userInfo.roomId;
 
@@ -35,7 +35,7 @@ io.sockets.on('connection', function (socket) {
 	// when the client emits 'sendchat', this listens and executes
 	socket.on('sendchat', function (data) {
 		// we tell the client to execute 'updatechat' with 2 parameters
-		console.log("Chat message: " + data);
+		//console.log("Chat message: " + data);
 		io.sockets.in(socket.room).emit('updatechat', socket.username, data);
 	});
 
@@ -48,7 +48,7 @@ io.sockets.on('connection', function (socket) {
 
 	// when the client emits 'sendchat', this listens and executes
 	socket.on('sendmessage', function (messageInfo) {		
-		console.log(messageInfo);
+		//console.log(messageInfo);
 		var formData = {
 				// Pass a simple key-value pair
 				messageInfo: messageInfo
@@ -57,6 +57,38 @@ io.sockets.on('connection', function (socket) {
 			console.log(result);
 			messageInfo = JSON.parse(messageInfo);
 			io.sockets.in(socket.room).emit('updatemessages', result);
+		});
+	});
+	
+	socket.on('messagechatinitialize', function(userInfo){
+		userInfo = JSON.parse(userInfo);
+		//socket.userInfo = userInfo;
+		var senderId = userInfo.senderId;
+		var receiverId = userInfo.receiverId;
+		var messageChatIdentifier = 0;
+		if(senderId < receiverId)
+		{
+			messageChatIdentifier = senderId+'_'+receiverId;
+		}
+		else
+		{
+			messageChatIdentifier = receiverId+'_'+senderId;
+		}
+		//console.log(messageChatIdentifier);
+		//socket.username = userInfo.firstName + userInfo.lastName;
+		socket.messageChatIdentifier = messageChatIdentifier;
+		socket.join(messageChatIdentifier);
+	});
+	socket.on('sendmessagechat', function (messageInfo) {		
+		//console.log(messageInfo);
+		var formData = {
+				// Pass a simple key-value pair
+				messageInfo: messageInfo
+		};
+		request.post({url: SERVER_ROOT_URL + 'chat_nodejs/message_chat/store_chat_message', formData: formData}, function optionalCallback(err, httpResponse, result) {
+			//console.log(result);
+			messageInfo = JSON.parse(messageInfo);
+			io.sockets.in(socket.messageChatIdentifier).emit('updatemessagecchat', result);
 		});
 	});
 });
