@@ -1,3 +1,3 @@
 @ECHO OFF
-cd C:\xampp\htdocs\sonuto_chat
+cd %~dp0
 node server.js
